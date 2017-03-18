@@ -8,7 +8,6 @@ using UnityEngine;
 public class WorldGenerator : MonoBehaviour
 {
 
-
     [SerializeField]
     [Header("Texture Values")]
     Texture2D spriteSheet;
@@ -23,11 +22,14 @@ public class WorldGenerator : MonoBehaviour
     Vector3 terainSize = Vector3.zero;
     GameObject[,,] world;
 
+    //Prefap for the block we are going to use
     [SerializeField]
     GameObject block;
 
     GameObject player;
+    //Camera used for visualizing the generation of the world (Must be named GenCam)
     GameObject cam;
+
     bool destroyed = false;
     bool done = false;
 
@@ -41,7 +43,7 @@ public class WorldGenerator : MonoBehaviour
 
     int sqaure = 84;
 
-
+    //map function from arduino
     float map(float x, float in_min, float in_max, float out_min, float out_max)
     {
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
@@ -61,7 +63,10 @@ public class WorldGenerator : MonoBehaviour
 
         return total;
     }
-
+    /*
+     * Start perlin noise functions
+     * https://gist.github.com/Flafla2
+     */
     private static readonly int[] permutation = { 151,160,137,91,90,15,					// Hash lookup table as defined by Ken Perlin.  This is a randomly
 		131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,	// arranged array of all numbers from 0-255 inclusive.
 		190, 6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,
@@ -151,6 +156,10 @@ public class WorldGenerator : MonoBehaviour
     {
         return a + x * (b - a);
     }
+    /*
+    * stop perlin noise functions
+    */
+
     // Use this for initialization
     void Start()
     {
@@ -170,13 +179,14 @@ public class WorldGenerator : MonoBehaviour
 
         world = new GameObject[(int)terainSize.x, (int)terainSize.y, (int)terainSize.z];
 
-
+        //Start generating the world
         worldGenThreat = StartCoroutine(startWorld());
     }
 
     // Update is called once per frame
     void Update()
     {
+        //create and destroy world
         if (Input.GetKeyDown(KeyCode.Escape) && done && worldGenThreat == null)
         {
             done = false;
@@ -192,7 +202,7 @@ public class WorldGenerator : MonoBehaviour
     }
 
 
-
+    //thread for destroying the world
     IEnumerator destroyWorld()
     {
         activeGenCam();
@@ -205,6 +215,7 @@ public class WorldGenerator : MonoBehaviour
         destroyed = false;
         worldGenThreat = null;
     }
+
     void activeGenCam()
     {
         if (player != null)
@@ -215,6 +226,7 @@ public class WorldGenerator : MonoBehaviour
         done = true;
     }
 
+    //destroy the world
     IEnumerator destroyPerlin()
     {
         for (int i = 0; i < terainSize.x; i++)
@@ -229,28 +241,30 @@ public class WorldGenerator : MonoBehaviour
             yield return null;
         }
     }
+    
+    //thread for creating the world
     IEnumerator startWorld()
     {
         yield return genPerlin();
         yield return genWorld();
-        yield return setVisibleActive();
+        //yield return setVisibleActive();
         yield return genCaves();
-        System.GC.Collect();
         System.GC.Collect();
         activatePlayer();
         done = true;
         worldGenThreat = null;
     }
 
+    //connect all the blocks so they can interact with eachother when needed
     IEnumerator genWorld()
     {
-        sqaure = 0;
         for (int i = 0; i < terainSize.x; i++)
         {
             for (int j = 0; j < terainSize.y; j++)
             {
                 for (int p = 0; p < terainSize.z; p++)
                 {
+                    //set al the sides of the block
                     GameObject right, left, up, down, front, back;
                     if (world[i, j, p] != null)
                     {
@@ -286,14 +300,18 @@ public class WorldGenerator : MonoBehaviour
                         else
                             back = world[i, j, p - 1];
 
+                        //set the sides of the block
                         world[i, j, p].GetComponent<Block>().setSides(right, left, up, down, front, back);
+                        //update the mesh to only have the faces that can be seen by the player
                         world[i, j, p].GetComponent<Block>().updateMesh();
+                        //deactivate the block if it can't be seen at al
                         if (right == null && left == null && up == null && down == null && front == null && back == null)
                             gameObject.SetActive(false);
                     }
 
                 }
             }
+            //update thread
             yield return null;
         }
 
@@ -309,6 +327,7 @@ public class WorldGenerator : MonoBehaviour
 
     }
 
+    //generate the caves
     IEnumerator genCaves()
     {
         for (int z = 0; z < terainSize.z; z++)
@@ -317,6 +336,7 @@ public class WorldGenerator : MonoBehaviour
             {
                 for (int y = 1; y < terainSize.y; y++)
                 {
+                    //check if position in 3D perlin noise has a value higher than 0.6
                     float p = (float)perlin((double)(seed + transform.position.x + x) / 10.0f, (double)(seed + y) / 10.0f, (double)(seed + transform.position.z + z) / 10.0f);
                     if (p > 0.6f)
                     {
@@ -329,6 +349,8 @@ public class WorldGenerator : MonoBehaviour
             yield return null;
         }
     }
+
+    //generate the actual world
     IEnumerator genPerlin()
     {
         for (int z = 0; z < terainSize.z; z++)
@@ -337,11 +359,13 @@ public class WorldGenerator : MonoBehaviour
             {
                 for (int y = 0; y < terainSize.y; y++)
                 {
+                    //check if creating the bottom of the world
                     if (y == 0)
                     {
                         world[x, y, z] = Instantiate(block, new Vector3(transform.position.x + x, transform.position.y + y, transform.position.z + z), Quaternion.identity , transform);
                         world[x, y, z].GetComponent<Block>().setBlock(4);
                     }
+                    //check if it should be underground
                     else if (y / terainSize.y < 0.6f)
                     {
                         world[x, y, z] = Instantiate(block, new Vector3(transform.position.x + x, transform.position.y + y, transform.position.z + z), Quaternion.identity, transform);
@@ -349,6 +373,7 @@ public class WorldGenerator : MonoBehaviour
                         cam.transform.position = new Vector3(transform.position.x + x, transform.position.y + y, transform.position.z + z);
                         cam.transform.LookAt(Vector3.zero);
                     }
+                    //check if its the surface
                     else
                     {
                         float p = (float)perlin((double)(seed + transform.position.x + x) / 30.0f, 0.0f, (double)(seed + transform.position.z + z) / 30.0f);
@@ -431,6 +456,7 @@ public class WorldGenerator : MonoBehaviour
         if (pos.y > 0)
             Destroy(world[(int)pos.x, (int)pos.y, (int)pos.z]);
     }
+    //add block at certain position
     public void addBlockAt(Vector3 pos, int type)
     {
         if (pos.x >= 0 && pos.x < terainSize.x && pos.y >= 0 && pos.y < terainSize.y && pos.z >= 0 && pos.z < terainSize.z)
