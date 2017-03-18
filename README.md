@@ -11,3 +11,9 @@ Im able to visualize all of it by using multi-threading.
 * Tree generation
 * Inventory
 * Ore Spawning
+
+---
+
+### credits
+
+* perlin noise | https://gist.github.com/Flafla2
