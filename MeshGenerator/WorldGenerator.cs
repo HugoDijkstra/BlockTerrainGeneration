@@ -187,7 +187,7 @@ public class WorldGenerator : MonoBehaviour
     void Update()
     {
         //create and destroy world
-        if (Input.GetKeyDown(KeyCode.Escape) && done && worldGenThreat == null)
+        if (Input.GetKeyDown(KeyCode.P) && done && worldGenThreat == null)
         {
             done = false;
             if (destroyed == false)

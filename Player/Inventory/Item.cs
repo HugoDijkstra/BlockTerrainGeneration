@@ -5,16 +5,40 @@ using UnityEngine;
 [System.Serializable]
 public class Item
 {
-
-    // Use this for initialization
-    void Start()
+    public Item()
     {
-
+        this.id = 0;
+        this.name = "item.name";
+        this.icon = null;
+        this.damage = 0;
+        this.type = Type.Default;
     }
-
-    // Update is called once per frame
-    void Update()
+    public Item(int id, string name, Sprite icon, float damage, Type type)
     {
-
+        this.id = id;
+        this.name = name;
+        this.icon = icon;
+        this.damage = damage;
+        this.type = type;
     }
+    public Item(int id, string name, string iconPath, float damage, Type type)
+    {
+        this.id = id;
+        this.name = name;
+        this.icon = Resources.Load<Sprite>(iconPath);
+        this.damage = damage;
+        this.type = type;
+    }
+    public int id;
+    public string name;
+    public Sprite icon;
+    public float damage;
+    public Type type;
+    public enum Type
+    {
+        Default,
+        Food,
+        Weapon,
+        Block
+    };
 }
